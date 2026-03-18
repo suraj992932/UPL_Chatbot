@@ -133,13 +133,7 @@ if user_input := st.chat_input("Ask a question about UPL policies …"):
                 )
 
             except Exception as exc:
-    error_msg = f"❌ Error: {str(exc)}"
-    st.error(error_msg)
-    st.session_state.messages.append(
-        {"role": "assistant", "content": error_msg}
-    )
-            except Exception as exc:
-                error_msg = f"❌ An error occurred: {str(exc)}"
+                error_msg = f"❌ Error: {str(exc)}"
                 st.error(error_msg)
                 st.session_state.messages.append(
                     {"role": "assistant", "content": error_msg}
