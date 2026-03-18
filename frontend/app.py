@@ -6,7 +6,16 @@ and displays answers with source citations.
 """
 
 import streamlit as st
-import requests
+# import requests
+from backend.pdf_loader import load_and_split_pdfs
+from backend.vector_store import get_or_build_vector_store
+from backend.rag_chain import generate_answer
+@st.cache_resource
+def load_vector_store():
+    chunks = load_and_split_pdfs()
+    return get_or_build_vector_store(chunks)
+
+vector_store = load_vector_store()
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -15,8 +24,8 @@ st.set_page_config(
     layout="centered",
 )
 
-# ── Backend URL ───────────────────────────────────────────────────────────────
-BACKEND_URL = "http://localhost:8000"
+# # ── Backend URL ───────────────────────────────────────────────────────────────
+# BACKEND_URL = "http://localhost:8000"
 
 # ── Custom CSS for a polished chat UI ─────────────────────────────────────────
 st.markdown(
@@ -94,16 +103,20 @@ if user_input := st.chat_input("Ask a question about UPL policies …"):
     with st.chat_message("assistant"):
         with st.spinner("Searching policy documents …"):
             try:
-                response = requests.post(
-                    f"{BACKEND_URL}/chat",
-                    json={"query": user_input},
-                    timeout=120,
-                )
-                response.raise_for_status()
-                data = response.json()
+                response = generate_answer(user_input, vector_store)
+                answer = response.get("answer", "No answer received.")
+                sources = response.get("sources", [])
+             
+                # response = requests.post(
+                #     f"{BACKEND_URL}/chat",
+                #     json={"query": user_input},
+                #     timeout=120,
+                # )
+                # response.raise_for_status()
+                # data = response.json()
 
-                answer = data.get("answer", "No answer received.")
-                sources = data.get("sources", [])
+                # answer = data.get("answer", "No answer received.")
+                # sources = data.get("sources", [])
 
                 # Format sources as badges
                 if sources:
@@ -119,18 +132,12 @@ if user_input := st.chat_input("Ask a question about UPL policies …"):
                     {"role": "assistant", "content": full_response}
                 )
 
-            except requests.exceptions.ConnectionError:
-                error_msg = "⚠️ Cannot connect to the backend. Make sure the FastAPI server is running on `localhost:8000`."
-                st.error(error_msg)
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": error_msg}
-                )
-            except requests.exceptions.Timeout:
-                error_msg = "⏱️ Request timed out. The backend may be processing a large query."
-                st.error(error_msg)
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": error_msg}
-                )
+            except Exception as exc:
+    error_msg = f"❌ Error: {str(exc)}"
+    st.error(error_msg)
+    st.session_state.messages.append(
+        {"role": "assistant", "content": error_msg}
+    )
             except Exception as exc:
                 error_msg = f"❌ An error occurred: {str(exc)}"
                 st.error(error_msg)

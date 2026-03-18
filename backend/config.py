@@ -5,12 +5,16 @@ Configuration settings for the UPL Policy Chatbot backend.
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import streamlit as st
 
 # Load environment variables from .env file
 load_dotenv(dotenv_path=Path(__file__).parent / ".env", override=True)
 
-# ── API Keys ──────────────────────────────────────────────────────────────────
-OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+# # ── API Keys ──────────────────────────────────────────────────────────────────
+# OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+
+
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).parent.parent
