@@ -7,9 +7,18 @@ and displays answers with source citations.
 
 import streamlit as st
 # import requests
+import sys
+import os
+
+# Add the project root to sys.path so 'backend' can be imported on Streamlit Cloud
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from backend.pdf_loader import load_and_split_pdfs
 from backend.vector_store import get_or_build_vector_store
 from backend.rag_chain import generate_answer
+
 @st.cache_resource
 def load_vector_store():
     chunks = load_and_split_pdfs()
