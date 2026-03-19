@@ -29,7 +29,7 @@ CHUNK_OVERLAP: int = 200
 EMBEDDING_MODEL_NAME: str = "all-MiniLM-L6-v2"
 
 # ── Retrieval ─────────────────────────────────────────────────────────────────
-TOP_K_RESULTS: int = 2
+TOP_K_RESULTS: int = 5
 
 # ── LLM ───────────────────────────────────────────────────────────────────────
 OPENAI_MODEL_NAME: str = "gpt-4o-mini"
