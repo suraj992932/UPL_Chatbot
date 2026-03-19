@@ -25,7 +25,7 @@ SYSTEM_PROMPT = """\
 You are an assistant answering questions about UPL corporate policies.
 RULES:
 1. Answer ONLY from the provided context. If unknown, say: "Answer not found in provided policy documents."
-2. Keep answers short (maximum 2-3 lines). Be concise.
+2. Keep answers concise by default, but provide detailed explanations if the user explicitly asks for them.
 3. Mention the source policy name.
 
 CONTEXT:
@@ -60,8 +60,7 @@ def _format_context(docs: List[Document]) -> str:
         source = doc.metadata.get("source", "Unknown")
         parts.append(f"[Source: {source}]\n{doc.page_content}")
     
-    full_text = "\n\n---\n\n".join(parts)
-    return full_text[:500]  # Truncate context to save input tokens
+    return "\n\n---\n\n".join(parts)
 
 
 def _extract_sources(docs: List[Document]) -> List[str]:
@@ -76,24 +75,14 @@ def _extract_sources(docs: List[Document]) -> List[str]:
     return sources
 
 
-# Simple in-memory cache to skip API calls for repeated queries
-_answer_cache: Dict[str, Dict[str, object]] = {}
-
 def generate_answer(
     query: str,
     vector_store: FAISS,
     k: int = TOP_K_RESULTS,
 ) -> Dict[str, object]:
     """
-    Full RAG pipeline with caching, shortened context, and rate-limit handling.
+    Full RAG pipeline with shortened context and rate-limit handling.
     """
-    query_lower = query.strip().lower()
-    
-    # 0. Check cache
-    if query_lower in _answer_cache:
-        logger.info("Serving answer from cache.")
-        return _answer_cache[query_lower]
-
     # 1. Retrieve
     relevant_docs = similarity_search(vector_store, query, k=k)
     logger.info("Retrieved %d chunks for query: %s", len(relevant_docs), query[:80])
@@ -141,6 +130,4 @@ def generate_answer(
         "sources": sources,
     }
     
-    # Save to cache
-    _answer_cache[query_lower] = result
     return result

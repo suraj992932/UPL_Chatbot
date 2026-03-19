@@ -22,8 +22,8 @@ DATA_PDF_DIR = PROJECT_ROOT / "data_pdf"
 FAISS_INDEX_DIR = PROJECT_ROOT / "faiss_index"
 
 # ── Text Splitting ────────────────────────────────────────────────────────────
-CHUNK_SIZE: int = 250
-CHUNK_OVERLAP: int = 50
+CHUNK_SIZE: int = 1000
+CHUNK_OVERLAP: int = 200
 
 # ── Embeddings ────────────────────────────────────────────────────────────────
 EMBEDDING_MODEL_NAME: str = "all-MiniLM-L6-v2"
