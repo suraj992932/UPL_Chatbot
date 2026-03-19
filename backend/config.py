@@ -18,7 +18,7 @@ except Exception:
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).parent.parent
-DATA_PDF_DIR = PROJECT_ROOT / "data_pdf"
+DATA_PDF_DIR = PROJECT_ROOT / "knowledge_base"
 FAISS_INDEX_DIR = PROJECT_ROOT / "faiss_index"
 
 # ── Text Splitting ────────────────────────────────────────────────────────────
@@ -33,4 +33,4 @@ TOP_K_RESULTS: int = 5
 
 # ── LLM ───────────────────────────────────────────────────────────────────────
 OPENAI_MODEL_NAME: str = "gpt-4o-mini"
-LLM_TEMPERATURE: float = 0.2
+LLM_TEMPERATURE: float = 0.5
