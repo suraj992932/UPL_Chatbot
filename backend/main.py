@@ -14,21 +14,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from backend.pdf_loader import load_and_split_pdfs
-from backend.vector_store import get_or_build_vector_store
+from backend.vector_store import get_or_build_vector_store 
 from backend.rag_chain import generate_answer
 
-# ── Logging ───────────────────────────────────────────────────────────────────
+# ── Logging 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
 )
 logger = logging.getLogger(__name__)
 
-# ── Global state ──────────────────────────────────────────────────────────────
+# ── Global state 
 vector_store = None
 
 
-# ── Lifespan (startup / shutdown) ─────────────────────────────────────────────
+# ── Lifespan (startup / shutdown) 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Load PDFs and build/load the FAISS index on startup."""

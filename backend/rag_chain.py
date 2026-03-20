@@ -20,13 +20,16 @@ from backend.vector_store import similarity_search
 
 logger = logging.getLogger(__name__)
 
-# ── System prompt that enforces document-only answers ─────────────────────────
 SYSTEM_PROMPT = """\
-You are an assistant answering questions about UPL corporate policies.
+You are the **UPL Policy Chatbot**, an AI assistant dedicated to answering questions about UPL corporate policies.
+
 RULES:
-1. Answer ONLY from the provided context. If unknown, say: "Answer not found in provided policy documents."
-2. Keep answers concise by default, but provide detailed explanations if the user explicitly asks details for them.
-3. Mention the source policy name.
+1. If the user greets you (e.g., "Hi", "Hello", "Hii"), respond politely and introduce yourself.
+2. If the user asks "Who are you?" or "Tell me about yourself", explain your purpose as the UPL Policy Chatbot.
+3. For policy-related questions, answer ONLY from the provided context. If the answer is not in the context, say: "Answer not found in provided policy documents."
+4. Keep answers concise by default, but provide detailed explanations if the user explicitly asks for them.
+5. For policy-related answers, always mention the source policy name.
+6. If an answer is partially available, try to infer from context.
 
 CONTEXT:
 {context}
@@ -84,14 +87,27 @@ def generate_answer(
     Full RAG pipeline with shortened context and rate-limit handling.
     """
     # 1. Retrieve
+    # relevant_docs = similarity_search(vector_store, query, k=k)
+    # logger.info("Retrieved %d chunks for query: %s", len(relevant_docs), query[:80])
+
+    # if not relevant_docs:
+    #     return {
+    #         "answer": "Answer not found in provided policy documents.",
+    #         "sources": [],
+    #     }
+    # 1. Retrieve
     relevant_docs = similarity_search(vector_store, query, k=k)
-    logger.info("Retrieved %d chunks for query: %s", len(relevant_docs), query[:80])
+
+    print("\n Retrieved Docs:\n")
 
     if not relevant_docs:
-        return {
-            "answer": "Answer not found in provided policy documents.",
-            "sources": [],
-        }
+        print(" No documents retrieved!")
+    else:
+        for i, doc in enumerate(relevant_docs, 1):
+            print(f"\n--- Document {i} ---")
+            print(doc.page_content[:300])
+
+    logger.info("Retrieved %d chunks for query: %s", len(relevant_docs), query[:80])
 
     # 2. Build prompt
     context = _format_context(relevant_docs)
@@ -123,8 +139,23 @@ def generate_answer(
                 raise exc
 
     # 4. Package result
-    sources = _extract_sources(relevant_docs)
+    all_retrieved_sources = _extract_sources(relevant_docs)
     
+    # Optional: Suppress sources if the message is a greeting or identity explanation,
+    # or if the model says it couldn't find an answer.
+    lowered_answer = response.content.lower()
+    if "answer not found" in lowered_answer:
+        sources = []
+    else:
+        # A simple but effective heuristic: Only return sources that the LLM 
+        # actually mentioned in its answer (since rule #5 requires it).
+        sources = [s for s in all_retrieved_sources if s.lower().replace(".pdf", "").replace("-", " ").replace("_", " ") in lowered_answer or s.lower() in lowered_answer]
+        
+        # Fallback if no specific source was mentioned by name but the model clearly didn't say "Answer not found". 
+        # This handles cases where it might use a generic reference but we still want to show all retrieved docs as sources.
+        if not sources and len(response.content.split()) > 40: # Probably a policy answer
+             sources = all_retrieved_sources
+
     result = {
         "answer": response.content,
         "sources": sources,
